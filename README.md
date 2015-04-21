@@ -1,2 +1,2 @@
 # 7aflat
-api for the upcoming 7aflat ap
+api for the upcoming 7aflat application
