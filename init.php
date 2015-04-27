@@ -11,43 +11,52 @@ var $selected_db = null;
 var $json = null;
 // var $request_method = $_SERVER['REQUEST_METHOD'];
 
-	function connect($host, $user, $pass, $db){
-		$this->host = $host;
-		$this->user = $user;
-		$this->pass = $pass;
-		$this->db = $db;
+	function connect(){
 
-		$this->conn = new mysqli($host, $user, $pass);
+		$this->conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
+		$this->selected_db = $this->conn->select_db($this->db);
 
 		if (mysqli_connect_errno()){
 	    printf("Connect failed: %s\n", mysqli_connect_error());
 	    exit();
-	}
-	$this->selected_db = $this->conn->select_db($db);
+	}else echo "connected to DB";
 		}
 
-	function request ($request_method){
+	function requestJSON($json){
+	header('content-type: application/json');
+	$encoded = json_encode($json);
+	echo "$encoded";
+	}
 
-		if ($request_method == "POST"){
-		$name = isset($_POST['name'])? $conn->real_escape_string($_POST['name']) : "";
-		$id = isset($_POST['id'])? $conn->real_escape_string($_POST['id'])  : 0;
-		$job = isset($_POST['job'])? $conn->real_escape_string($_POST['job']): "";
+	function request (){
 
-		$insert_query = "INSERT INTO $table (name, id, job) VALUES ('$name', '$id', '$job')";
-		$query = $conn->query($insert_query);
+		if ($_SERVER['REQUEST_METHOD'] == "POST"){
+		$name = isset($_POST['name'])? $this->conn->real_escape_string($_POST['name']) : "";
+		$id = isset($_POST['id'])? $this->conn->real_escape_string($_POST['id']): "";
+		$job = isset($_POST['job'])? $this->conn->real_escape_string($_POST['job']): "";
+		$age = isset($_POST['age'])? $this->conn->real_escape_string($_POST['age']): "";
+
+		if ($id == ""){
+			echo "\nNO ID!!";
+		}else
+		$insert_query = "INSERT $this->table (name, job, age, id) VALUES ('$name', '$job', '$age', '$id')";
+		$query = $this->conn->query($insert_query);
 
 		if($query){
-			$this->json = $json;
-		$json = array("status" => 1, "msg" => "Done! data added!");
+		$post_json = array("status" => "1", "msg" => "Done! data added!");
+		$this->closeConnection();
+		$this->requestJSON($post_json);
 		}else{
-			$json = array("status" => 0, "msg" => "ERROR ADDING DATA..", "query" => $query, "error" => $conn->error);
+			$post_json = array("status" => "0", "msg" => "ERROR ADDING DATA..", "query" => $query, "error" => $this->conn->error);
+			$this->closeConnection();
+			$this->requestJSON($post_json);
 			}
-		}else if ($request_method == "GET"){
-			$id = isset($_GET['id'])? $conn->real_escape_string($_GET['id']) : "" ;
+		}else if ($_SERVER['REQUEST_METHOD'] == "GET"){
+			$id = isset($_GET['id'])? $this->conn->real_escape_string($_GET['id']) : "" ;
 
 			if (!empty($id)){
-				$select_query = "SELECT name, job FROM $table where id='$id'";
-				$get_query = $conn->query($select_query);
+				$select_query = "SELECT name, job FROM $this->table where id='$id'";
+				$get_query = $this->conn->query($select_query);
 				$result = array();
 
 				while ($r = mysqli_fetch_array($get_query)){
@@ -55,29 +64,31 @@ var $json = null;
 					$result[] = array("name"=>$name, "job"=>$job);
 				}
 				
-				$json = array("status"=>1, "info"=>$result[0]);
+				$get_json = array("status"=>1, "info"=>$result[0]);
+				$this->closeConnection();
+				$this->requestJSON($get_json);
 			}else{
-				$json = array("status"=>0, "msg"=>$id);
+				$get_json = array("status"=>0, "msg"=>$id);
+				$this->closeConnection();
+				$this->requestJSON($get_json);
 			}
 		}else echo "request type not yet supported!";
 
 	}
 
-	function closeConnection ($conn){
-		$this->conn = $conn;
-		$conn->close();
+	function closeConnection (){
+		$this->conn->close();
+		echo "\n connection closed";
 	}
 
-	function requestJSON ($json){
-		header('Content-type: application/json');
-		echo json_encode($json);
-	}
-
-	request($_SERVER['REQUEST_METHOD']);
-	closeConnection($this->conn);
-	requestJSON($this->json);
 }
 
+$api_test = new API;
+
+$api_test->connect();
+$api_test->request();
+// $api_test->closeConnection();
+// $api_test->requestJSON();
 
 
 
