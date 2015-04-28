@@ -33,7 +33,7 @@ class API {
 	// function to handle requests
 	function request ($server_request_method){
 		// handling the POST request
-		if ($server_request_method] == "POST"){
+		if ($server_request_method == "POST"){
 			$name = isset($_POST['name'])? $this->conn->real_escape_string($_POST['name']) : "";
 			$id = isset($_POST['id'])? $this->conn->real_escape_string($_POST['id']): "";
 			$job = isset($_POST['job'])? $this->conn->real_escape_string($_POST['job']): "";
